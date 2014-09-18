@@ -13,4 +13,6 @@ The code can decompile Python 1.5.2 or 2.0 bytecodes, optimized or not, and retu
 
 The code is licensed under the MIT licence, basically allowing you to do almost anything with the code.
 
-Last Updated: 21 January 2005 
+For more modern Python code (Python 2.7), look at the uncompyle code:
+- https://github.com/gstarnberger/uncompyle
+- https://pypi.python.org/pypi/uncompyle2/1.1

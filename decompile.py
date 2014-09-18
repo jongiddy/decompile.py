@@ -3,14 +3,14 @@
 #
 # Copyright (c) 2001 Jonathan Patrick Giddy
 #
-# Permission is hereby granted, free of charge, to any person obtaining 
+# Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
 # "Software"), to deal in the Software without restriction, including
 # without limitation the rights to use, copy, modify, merge, publish,
 # distribute, sublicense, and/or sell copies of the Software, and to
 # permit persons to whom the Software is furnished to do so, subject to
 # the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
 #
@@ -23,7 +23,12 @@
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # Send comments to:
-# Jonathan Giddy, jongiddy@pobox.co.uk
+# Jonathan Giddy, jongiddy@gmail.com
+
+# version 0.9.1
+# Date 18 September 2014
+# - no code changes, moved to Github, updated email address
+# - uncompyle is now the recommended decompiler for modern Python (2.7)
 
 # version 0.9
 # Date 21 January 2005
@@ -80,13 +85,13 @@ class Expression:
 
     def __repr__(self):
         return 'Expression(%s, %s)' % (`self.value`, `self.precedence`)
-    
+
     def __str__(self):
         return str(self.value)
 
     def Precedence(self):
         return self.precedence
-    
+
     def Value(self):
         return self.value
 
@@ -108,7 +113,7 @@ class Constant(Atom):
             return '...'
         else:
             return repr(self.value)
-        
+
 class Local(Atom):
     pass
 
@@ -151,7 +156,7 @@ class Tuple(Atom):
 
     def Value(self):
         return tuple(self.value)
-            
+
 class CodeCursor:
 
     def __init__(self, code):
@@ -167,14 +172,14 @@ class CodeCursor:
 
     def AtEnd(self):
         return self.i == self.stopi[0]
-    
+
     def GetLine(self):
         return max(self.lineno, current_line(self.code, self.lastop))
 
     def SetLine(self, lineno):
         assert lineno >= self.lineno, `lineno, self.lineno`
         self.lineno = lineno
-        
+
     def PushStop(self, i):
         self.stopi.append(i)
 
@@ -218,11 +223,11 @@ class CodeCursor:
     def GetLocal(self, n):
         assert n < len(self.code.co_varnames), `n, self.code.co_varnames`
         return self.code.co_varnames[n]
-    
+
     def GetName(self, n):
         assert n < len(self.code.co_names), `n, self.code.co_names`
         return self.code.co_names[n]
-    
+
 class Decompiler:
 
     def __init__(self, version):
@@ -231,7 +236,7 @@ class Decompiler:
         self.lines = {}
         self.global_decl = {}
         self.loop = None
-    
+
     def decompile(self, code, *termop):
         try:
             self.code = code
@@ -248,7 +253,7 @@ class Decompiler:
 
     def getstack(self):
         return self.stack
-    
+
     def getsource(self, indent):
         assert not self.stack, `self.stack`
         lines = {}
@@ -367,7 +372,7 @@ class Decompiler:
     def BREAK_LOOP(self, code):
         code.ReadOpcode('BREAK_LOOP')
         self.addline(code.GetLine(), 'break')
-        
+
     def BUILD_LIST(self, code):
         code.ReadOpcode('BUILD_LIST')
         oparg = code.ReadOperand()
@@ -406,7 +411,7 @@ class Decompiler:
             x = x.GetString(PRECEDENCE_ARG)
         # always goes into BINARY_SUBSCR, so precedence is irrelevant
         self.stack.append(Expression('%s:%s:%s' % (x, y, z), PRECEDENCE_NONE))
-        
+
     def BUILD_TUPLE(self, code):
         code.ReadOpcode()
         oparg = code.ReadOperand()
@@ -445,7 +450,7 @@ class Decompiler:
     CALL_FUNCTION_VAR = CALL_FUNCTION
     CALL_FUNCTION_KW = CALL_FUNCTION
     CALL_FUNCTION_VAR_KW = CALL_FUNCTION
-    
+
     def COMPARE_OP(self, code):
         code.ReadOpcode()
         oparg = code.ReadOperand()
@@ -478,7 +483,7 @@ class Decompiler:
         attr = code.GetName(oparg)
         x = self.stack.pop().GetString(PRECEDENCE_ATOM)
         self.addline(code.GetLine(), 'del %s.%s' % (x, attr))
-        
+
     def DELETE_FAST(self, code):
         names = []
         lastlineno = -1
@@ -522,14 +527,14 @@ class Decompiler:
         z = self.stack.pop().GetString(PRECEDENCE_ARG)
         x = self.stack.pop().GetString(PRECEDENCE_ATOM)
         self.addline(code.GetLine(), 'del %s[:%s]' % (x, z))
-        
+
     def DELETE_SLICE_3(self, code):
         code.ReadOpcode()
         z = self.stack.pop().GetString(PRECEDENCE_ARG)
         y = self.stack.pop().GetString(PRECEDENCE_ARG)
         x = self.stack.pop().GetString(PRECEDENCE_ATOM)
         self.addline(code.GetLine(), 'del %s[%s:%s]' % (x, y, z))
-        
+
     def DELETE_SUBSCR(self, code):
         code.ReadOpcode()
         y = self.stack.pop().GetString(PRECEDENCE_NONE)
@@ -539,12 +544,12 @@ class Decompiler:
     def DUP_TOP(self, code):
         code.ReadOpcode('DUP_TOP')
         self.stack.append(self.stack[-1])
-        
+
     def DUP_TOPX(self, code):
         code.ReadOpcode('DUP_TOPX')
         n = code.ReadOperand()
         self.stack = self.stack + self.stack[-n:]
-        
+
     def EXEC_STMT(self, code):
         code.ReadOpcode('EXEC_STMT')
         lineno = code.GetLine()
@@ -589,7 +594,7 @@ class Decompiler:
             code.PopStop()
             self.addclause(lineno, "else:", d.getsource(1))
         assert code.GetPosition() == end
-        
+
     def IMPORT_NAME(self, code):
         names = []
         while code.NextOpcode() == 'IMPORT_NAME':
@@ -702,12 +707,12 @@ class Decompiler:
     INPLACE_RSHIFT = INPLACE_ADD
     INPLACE_SUBTRACT = INPLACE_ADD
     INPLACE_XOR = INPLACE_ADD
-    
+
     def JUMP_ABSOLUTE(self, code):
         code.ReadOpcode('JUMP_ABSOLUTE')
         code.ReadOperand()
         self.addline(code.GetLine(), 'continue')
-        
+
     def JUMP_IF_FALSE(self, code):
         code.ReadOpcode('JUMP_IF_FALSE')
         leap = code.ReadOperand()
@@ -834,7 +839,7 @@ class Decompiler:
         if x.Precedence() < PRECEDENCE_ATOM:
             x = '(%s)' % x
         self.stack.append(Expression('%s.%s' % (x, attr), PRECEDENCE_ATOM))
-        
+
     def LOAD_CONST(self, code):
         code.ReadOpcode('LOAD_CONST')
         oparg = code.ReadOperand()
@@ -844,7 +849,7 @@ class Decompiler:
         code.ReadOpcode('LOAD_FAST')
         oparg = code.ReadOperand()
         self.stack.append(Local(code.GetLocal(oparg)))
-        
+
     def LOAD_GLOBAL(self, code):
         code.ReadOpcode('LOAD_GLOBAL')
         oparg = code.ReadOperand()
@@ -853,7 +858,7 @@ class Decompiler:
     def LOAD_LOCALS(self, code):
         code.ReadOpcode('LOAD_LOCALS')
         self.stack.append(Constant(None))
-        
+
     def LOAD_NAME(self, code):
         code.ReadOpcode('LOAD_NAME')
         oparg = code.ReadOperand()
@@ -997,12 +1002,12 @@ class Decompiler:
     def PRINT_NEWLINE(self, code):
         code.ReadOpcode('PRINT_NEWLINE')
         self.addline(code.GetLine(), 'print')
-        
+
     def PRINT_NEWLINE_TO(self, code):
         code.ReadOpcode('PRINT_NEWLINE')
         file = self.stack.pop().GetString(PRECEDENCE_ARG)
         self.addline(code.GetLine(), 'print >> %s' % file)
-        
+
     def POP_TOP(self, code):
         code.ReadOpcode('POP_TOP')
         self.addline(code.GetLine(),
@@ -1017,7 +1022,7 @@ class Decompiler:
             args.append(arg)
         args.reverse()
         self.addline(code.GetLine(), 'raise %s' % string.join(args, ', '))
-        
+
     def RETURN_VALUE(self, code):
         code.ReadOpcode()
         y = self.stack.pop()
@@ -1113,7 +1118,7 @@ class Decompiler:
             assert code.GetPosition() == nextclause
             code.ReadOpcode('POP_TOP')
         return end
-        
+
     def SETUP_EXCEPT(self, code):
         code.ReadOpcode('SETUP_EXCEPT')
         leap = code.ReadOperand()
@@ -1142,7 +1147,7 @@ class Decompiler:
             code.PopStop()
             self.addclause(lineno, "else:", d.getsource(1))
         assert code.GetPosition() == end
-        
+
     def SETUP_FINALLY(self, code):
         code.ReadOpcode('SETUP_FINALLY')
         leap = code.ReadOperand()
@@ -1163,7 +1168,7 @@ class Decompiler:
         body = d.getsource(1)
         self.addclause(lineno, "finally:", body)
         code.ReadOpcode('END_FINALLY')
-       
+
     def SETUP_LOOP(self, code):
         code.ReadOpcode('SETUP_LOOP')
         leap = code.ReadOperand()
@@ -1187,14 +1192,14 @@ class Decompiler:
         z = self.stack.pop().GetString(PRECEDENCE_ARG)
         x = self.stack.pop().GetString(PRECEDENCE_ATOM)
         self.stack.append(Expression('%s[:%s]' % (x, z), PRECEDENCE_ATOM))
-        
+
     def SLICE_3(self, code):
         code.ReadOpcode()
         z = self.stack.pop().GetString(PRECEDENCE_ARG)
         y = self.stack.pop().GetString(PRECEDENCE_ARG)
         x = self.stack.pop().GetString(PRECEDENCE_ATOM)
         self.stack.append(Expression('%s[%s:%s]' % (x, y, z), PRECEDENCE_ATOM))
-        
+
     def STORE_ATTR(self, code):
         code.ReadOpcode()
         oparg = code.ReadOperand()
@@ -1244,7 +1249,7 @@ class Decompiler:
         x = self.stack.pop().GetString(PRECEDENCE_ATOM)
         value = self.stack.pop().GetString(PRECEDENCE_NONE)
         self.addline(code.GetLine(), '%s[:%s] = %s' % (x, z, value))
-        
+
     def STORE_SLICE_3(self, code):
         code.ReadOpcode()
         z = self.stack.pop().GetString(PRECEDENCE_ARG)
@@ -1252,7 +1257,7 @@ class Decompiler:
         x = self.stack.pop().GetString(PRECEDENCE_ATOM)
         value = self.stack.pop().GetString(PRECEDENCE_NONE)
         self.addline(code.GetLine(), '%s[%s:%s] = %s' % (x, y, z, value))
-        
+
     def STORE_SUBSCR(self, code):
         code.ReadOpcode()
         key = self.stack.pop()
@@ -1272,7 +1277,7 @@ class Decompiler:
         code.ReadOpcode()
         value = self.stack.pop().GetString(PRECEDENCE_NONE)
         self.stack.append(Expression('`%s`' % value, PRECEDENCE_ATOM))
-        
+
     def UNARY_INVERT(self, code):
         code.ReadOpcode()
         # only requires PRECEDENCE_UNARY, but both powers and other
@@ -1367,7 +1372,7 @@ class Decompiler:
         seq = self.build_target(code).GetString(PRECEDENCE_NONE)
         rhs = self.stack.pop().GetString(PRECEDENCE_NONE)
         self.addline(code.GetLine(), '%s = %s' % (seq, rhs))
-    
+
     UNPACK_TUPLE = UNPACK_SEQUENCE
 
 # These tests need to be more complete, however, the things that are
@@ -1398,7 +1403,7 @@ tests = [
     'print >> file, a, b',
     'a = [2*i for i in x]',           # BROKEN: list comprehension
     'if 1:\n  pass\nelif 2: pass\nelse: 3', # BROKEN, swap conditions JUMP_IF_FALSE
-    
+
 ##    for i in r:
 ##        print
 ##    print hello, b
@@ -1438,7 +1443,7 @@ tests = [
 ##            while stuff[0] == '^':
 ##                stuff = stuff[1:] + stuff[0]
 ##            stuff = ('[' + stuff + ']'),
-##            
+##
 ##    a, b, c.b, a[p] = c
 ##    x = 1 - 2 + 3 - (4 + 5) - 6, 6
 ##    try:
@@ -1500,7 +1505,7 @@ def f():
 ##        del f
 ##    a = b.d = c[3] = a, b = f()
 ##    a = [2*i for i in x]
-    
+
 ##    import string, x as y
 ##    from spam.ham import eggs, foo as bar
 ##    from d import *
@@ -1543,7 +1548,7 @@ def f():
 ##            while stuff[0] == '^':
 ##                stuff = stuff[1:] + stuff[0]
 ##            stuff = ('[' + stuff + ']'),
-##            
+##
 ##    a, b, c.b, a[p] = c
 ##    x = 1 - 2 + 3 - (4 + 5) - 6, 6
 ##    try:
@@ -1562,7 +1567,7 @@ def f():
 ##        del b
 ##    if a and (b and c):
 ##        del c
-        
+
 if __name__ == '__main__':
   if 1:
     test()
@@ -1604,4 +1609,4 @@ if __name__ == '__main__':
     finally:
         out.close()
     sys.stderr.write('DONE\n')
-    
+
